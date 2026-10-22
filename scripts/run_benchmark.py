@@ -33,7 +33,7 @@ def main() -> int:
         fh.write(render_markdown(results))
     with open(os.path.join(out_dir, "benchmark.html"), "w", encoding="utf-8") as fh:
         fh.write(render_html(results))
-    print(f"reports written to {out_dir}")
+    print("reports written to reports/")
     return 0
 
 

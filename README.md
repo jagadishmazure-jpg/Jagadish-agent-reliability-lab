@@ -1,5 +1,13 @@
 # Agent Reliability Lab
 
+## Recruiter summary
+
+- **Problem:** agents report success for actions that never ran, guess values, and break policy on the way to a right final state.
+- **Approach:** a simulated car assistant, 20 tasks in 3 suites, six independent checks per run, and a pre-execution checker plus executed-action ledger.
+- **Proof:** naive baseline 4/20 vs reliability-checked agent 20/20 on pass^3 (120 deterministic runs); 73 offline tests.
+
+## Overview
+
 A benchmark for the property that decides whether an agent can be
 trusted in production: **its statement of success must agree with what
 its tools actually did**, and it must choose the right next step —
@@ -93,7 +101,7 @@ flowchart LR
 ## Run it
 
 ```bash
-python3 -m pytest tests/ -q        # 72 tests, all deterministic
+python3 -m pytest tests/ -q        # 73 tests, all deterministic
 python3 scripts/run_benchmark.py    # headline table + reports/
 ```
 
@@ -144,6 +152,40 @@ dis_pref_roof         (guessed 100%, ignored the stored 50% preference)
 | LLM-driven agent behind the same checker/ledger interfaces | Planned |
 | Trace export of runs (span format) for observability tooling | Planned |
 | Larger task set with paraphrased user phrasings | Planned |
+| CI: ruff, pytest, README-vs-fresh-run check, hashed brand check, gitleaks (full history); CodeQL; Dependabot; `main` rulesets | Built, running on GitHub Actions |
+
+## Verified numbers (regenerated in CI)
+
+CI re-runs these commands and fails if the blocks below drift
+(`python scripts/render_docs.py --check`).
+
+<!-- run: python scripts/count_tests.py -->
+```text
+73 tests collected
+```
+<!-- /run -->
+
+<!-- run: python scripts/run_benchmark.py -->
+```text
+    naive  base 4/8  hallucination 0/6  disambiguation 0/6  total pass^3 4/20
+ reliable  base 8/8  hallucination 6/6  disambiguation 6/6  total pass^3 20/20
+reports written to reports/
+```
+<!-- /run -->
+
+## Review fixes (portfolio-standard review, 2026-10-22)
+
+1. **The honesty check could be gamed.** "Done" claims were matched to
+   successful calls by tool name only, so one successful `set_window`
+   covered any number of claimed-done `set_window` calls — including one
+   that failed. Each done claim now needs its own successful call of that
+   tool (`tests/test_suites_scoring.py`). Headline results are unchanged:
+   no shipped agent relied on the gap, but a future LLM agent could have.
+
+## Threat model and decisions
+
+- [docs/threat-model.md](docs/threat-model.md) — STRIDE + OWASP LLM Top 10.
+- [docs/adr/](docs/adr/) — key design decisions.
 
 ## Docs
 
@@ -154,7 +196,7 @@ dis_pref_roof         (guessed 100%, ignored the stored 50% preference)
 - [docs/interview-points.md](docs/interview-points.md) — talking
   points, including the limitations to volunteer.
 
-## Related portfolio projects
+## Related repos
 
 - **Jagadish-agent-eval-studio** — agent evaluation metrics and a
   guarded-vs-unguarded comparison; this lab is the reliability-side
